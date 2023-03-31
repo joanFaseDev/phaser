@@ -2,6 +2,11 @@ import Phaser from "../lib/phaser.js";
 
 export default class Game extends Phaser.Scene {
     /**
+     * @type {Phaser.Types.Input.Keyboard.CursorKeys}
+     */
+    cursors;
+    
+    /**
      * @type {Phaser.Physics.Arcade.StaticGroup}
      */
     platforms;
@@ -27,6 +32,9 @@ export default class Game extends Phaser.Scene {
 
     create()
     {
+        //KEYBOARD
+        this.cursors = this.input.keyboard.createCursorKeys();
+
         //BACKGROUND
         this.add.image(240, 320, 'background').setScrollFactor(1, 0);
 
@@ -60,6 +68,7 @@ export default class Game extends Phaser.Scene {
 
         //CAMERA
         this.cameras.main.startFollow(this.player);
+        this.cameras.main.setDeadzone(this.scale.width * 1.5);
     }
 
     update()
@@ -83,6 +92,40 @@ export default class Game extends Phaser.Scene {
         if (touchingDown)
         {
             this.player.setVelocityY(-300);
+        }
+
+        // KEYBOARD
+        if (this.cursors.left.isDown && !touchingDown)
+        {
+            this.player.setVelocityX(-200);
+        }
+        else if (this.cursors.right.isDown && !touchingDown)
+        {
+            this.player.setVelocityX(200);
+        }
+        else {
+            this.player.setVelocityX(0);
+        }
+
+        this.horizontalWrap(this.player);
+    }
+
+    /**
+     * 
+     * @param {Phaser.GameObjects.Sprite} sprite
+     * @description Make an object wraps horizontally around the screen (e.g leaving the screen through the left makes the object reenter the screen through the right) 
+     */
+    horizontalWrap(sprite)
+    {
+        const halfWidth = sprite.displayWidth / 2;
+
+        if (sprite.x < -halfWidth)
+        {
+            sprite.x = this.scale.width + halfWidth;
+        }
+        else if (sprite.x > this.scale.width + halfWidth)
+        {
+            sprite.x = -halfWidth;
         }
     }
 }
