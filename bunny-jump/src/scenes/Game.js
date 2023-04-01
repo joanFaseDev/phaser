@@ -33,6 +33,11 @@ export default class Game extends Phaser.Scene {
         super('game');
     }
 
+    init()
+    {
+        this.carrotsCollected = 0;
+    }
+
     preload()
     {
         this.load.setBaseURL('./assets/');
@@ -40,7 +45,10 @@ export default class Game extends Phaser.Scene {
         this.load.image('background', 'bg_layer1.png');
         this.load.image('platform', 'ground_grass.png');
         this.load.image('bunny-stand', 'bunny1_stand.png');
-        this.load.image('carrot', 'carrot.png'); 
+        this.load.image('bunny-jump', 'bunny1_jump.png');
+        this.load.image('carrot', 'carrot.png');
+        
+        this.load.audio('jump', 'sfx/phaseJump1.ogg');
     }
 
     create()
@@ -123,9 +131,17 @@ export default class Game extends Phaser.Scene {
         if (touchingDown)
         {
             this.player.setVelocityY(-300);
+            this.player.setTexture('bunny-jump');
+            this.sound.play('jump');
         }
 
-        // KEYBOARD
+        const velocityY = this.player.body.velocity.y;
+        if (velocityY > 0 && this.player.texture.key !== 'bunny-stand')
+        {
+            this.player.setTexture('bunny-stand');
+        }
+
+        //KEYBOARD
         if (this.cursors.left.isDown && !touchingDown)
         {
             this.player.setVelocityX(-200);
@@ -140,10 +156,11 @@ export default class Game extends Phaser.Scene {
 
         this.horizontalWrap(this.player);
 
+        //GAME OVER
         const bottomPlatform = this.findBottomMostPlatform();
         if (this.player.y > bottomPlatform.y + 200)
         {
-            console.log('Game Over');
+            this.scene.start('game-over');
         }
     }
 
