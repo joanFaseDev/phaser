@@ -21,6 +21,12 @@ export default class Game extends Phaser.Scene {
      * @type {Phaser.Physics.Arcade.Group}
      */
     carrots;
+    carrotsCollected = 0;
+
+    /**
+     * @type {Phaser.GameObjects.Text}
+     */
+    score;
 
     constructor()
     {
@@ -82,6 +88,15 @@ export default class Game extends Phaser.Scene {
         //CAMERA
         this.cameras.main.startFollow(this.player);
         this.cameras.main.setDeadzone(this.scale.width * 1.5);
+
+        //SCORE
+        /**
+         * @type {Phaser.GameObjects.TextStyle}
+         */
+        const style = { color: '#000', fontSize: 24 };
+        this.score = this.add.text(240, 10, 'Carrots: 0', style)
+            .setScrollFactor(0)
+            .setOrigin(0.5, 0);
     }
 
     update()
@@ -102,9 +117,7 @@ export default class Game extends Phaser.Scene {
                 this.addCarrotAbove(platform);
             }
         });
-
-        //CARROTS
-
+        
         //PLAYER
         const touchingDown = this.player.body.touching.down;
         if (touchingDown)
@@ -126,6 +139,12 @@ export default class Game extends Phaser.Scene {
         }
 
         this.horizontalWrap(this.player);
+
+        const bottomPlatform = this.findBottomMostPlatform();
+        if (this.player.y > bottomPlatform.y + 200)
+        {
+            console.log('Game Over');
+        }
     }
 
     /**
@@ -185,5 +204,32 @@ export default class Game extends Phaser.Scene {
     {
         this.carrots.killAndHide(carrot);
         this.physics.world.disableBody(carrot.body);
+        this.carrotsCollected++;
+        this.score.text = `Carrots: ${this.carrotsCollected}`;
+    }
+
+    /**
+     * 
+     * @returns {Phaser.Physics.Arcade.Sprite}
+     * @description Find and return the current lowest platform of the game
+     */
+    findBottomMostPlatform()
+    {
+        const platforms = this.platforms.getChildren();
+        let bottomPlatform = platforms[0];
+
+        for (let i = 1; i < platforms.length; i++)
+        {
+            const platform = platforms[i];
+
+            if (platform.y < bottomPlatform.y)
+            {
+                continue;
+            }
+
+            bottomPlatform = platform;
+        }
+
+        return bottomPlatform;
     }
 }
