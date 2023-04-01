@@ -1,4 +1,5 @@
 import Phaser from "../lib/phaser.js";
+import Carrot from "../game/Carrot.js";
 
 export default class Game extends Phaser.Scene {
     /**
@@ -16,6 +17,11 @@ export default class Game extends Phaser.Scene {
      */
     player;
 
+    /**
+     * @type {Phaser.Physics.Arcade.Group}
+     */
+    carrots;
+
     constructor()
     {
         super('game');
@@ -27,7 +33,8 @@ export default class Game extends Phaser.Scene {
 
         this.load.image('background', 'bg_layer1.png');
         this.load.image('platform', 'ground_grass.png');
-        this.load.image('bunny-stand', 'bunny1_stand.png'); 
+        this.load.image('bunny-stand', 'bunny1_stand.png');
+        this.load.image('carrot', 'carrot.png'); 
     }
 
     create()
@@ -66,6 +73,12 @@ export default class Game extends Phaser.Scene {
 
         this.physics.add.collider(this.platforms, this.player);
 
+        //CARROTS
+        this.carrots = this.physics.add.group({ classType: Carrot });
+
+        this.physics.add.collider(this.platforms, this.carrots);
+        this.physics.add.overlap(this.carrots, this.player, this.handleCollectCarrot, undefined, this);
+
         //CAMERA
         this.cameras.main.startFollow(this.player);
         this.cameras.main.setDeadzone(this.scale.width * 1.5);
@@ -84,8 +97,13 @@ export default class Game extends Phaser.Scene {
             {
                 platform.y = scrollY - Phaser.Math.Between(50, 100);
                 platform.body.updateFromGameObject()
+
+                // Add a carrot above the newly created platform
+                this.addCarrotAbove(platform);
             }
         });
+
+        //CARROTS
 
         //PLAYER
         const touchingDown = this.player.body.touching.down;
@@ -127,5 +145,45 @@ export default class Game extends Phaser.Scene {
         {
             sprite.x = -halfWidth;
         }
+    }
+
+    /**
+     * 
+     * @param {Phaser.GameObjects.Sprite} sprite 
+     * @description Create a Carrot instance on each 'reused' platform
+     */
+    addCarrotAbove(sprite)
+    {
+        const y = sprite.y - sprite.displayHeight;
+
+        /**
+         * @type {Phaser.Physics.Arcade.Sprite}
+         * Phaser Groups will automatically recycle any inactive members when get() is called...
+         * ... but it doesn't automatically reactivate or make them visible so we have to do it
+         */
+        const carrot = this.carrots.get(sprite.x, y, 'carrot');
+
+        carrot.setActive(true);
+        carrot.setVisible(true);
+
+        this.add.existing(carrot);
+
+        carrot.body.setSize(carrot.width, carrot.height);
+
+        this.physics.world.enable(carrot);
+
+        return carrot;
+    }
+
+    /**
+     * 
+     * @param {Phaser.Physics.Arcade.Sprite} player 
+     * @param {Carrot} carrot
+     * @description Is called every time player overlaps a carrot, hide the carrot and deactivate its hitbox 
+     */
+    handleCollectCarrot(player, carrot)
+    {
+        this.carrots.killAndHide(carrot);
+        this.physics.world.disableBody(carrot.body);
     }
 }
